@@ -24,23 +24,38 @@
     <body>
         <div id="map">
         </div>
+	
+		<!-- Palvelulista -->
 		<div id="service-list"
-		style="position:absolute; top:10px; left:10px; 
+		style="position:absolute; top:125px; left:10px; 
                 background:white; padding:10px; max-height:300px; 
                 overflow:auto; z-index:1000; border:1px solid #ccc;">
+				
+		<!-- Etäisyydenvalinta -->
 		</div>
 		 <select id="distance-select" 
             style="position:absolute; top:320px; right:10px; z-index:1000;
 			font-size:16px; padding:6px 10px; border-radius:6px;
 			background:white; border:1px solid #ccc; box-shadow:0 2px 5px rgba(0,0,0,0.2);">
-			
-			
-		
-			
-        <option value="5min">5 min</option>
-        <option value="10min">10 min</option>
-        <option value="15min">15 min</option>
+			<option value="5min">5 min</option>
+			<option value="10min">10 min</option>
+			<option value="15min">15 min</option>
 		</select>
+			
+		<!-- Palvelutyypin valinta -->
+		<select id="filter-container"
+		style="position:absolute; top:370px; right:10px; z-index:1000;
+                   font-size:16px; padding:6px 10px; border-radius:6px;
+                   background:white; border:1px solid #ccc; box-shadow:0 2px 5px rgba(0,0,0,0.2);">
+		<option value="Kaikki">Kaikki</option>
+        <option value="Elokuvateatterit">Elokuvateatterit</option>
+        <option value="Hostellit">Hostellit</option>
+        <option value="Hotellit">Hotellit</option>
+        <option value="Museot">Museot</option>
+        <option value="Ravitsemusliikkeet">Ravitsemusliikkeet</option>
+        <option value="Teatterit">Teatterit</option>
+			</select>
+			
 		
         <script src="js/qgis2web_expressions.js"></script>
         <script src="js/leaflet.js"></script>
@@ -64,77 +79,92 @@
 		var layerGroup10 = L.layerGroup();
 		var layerGroup15 = L.layerGroup();
 		
-		
 		var currentDistance = "5min"; // oletusarvo
 		
-	
-
-			
-		
 		function showStopServices(stop_id) {
-    // Tyhjennä kaikki layer groupit
+    // Tyhjentää layerit
     layerGroup5.clearLayers();
     layerGroup10.clearLayers();
     layerGroup15.clearLayers();
-    
-    // Lista palveluista
-    var serviceListHTML = "<b>Palvelut:</b><ul>";
-    
-    // Valitse oikea layer aktiivisen matka-alueen mukaan
+
+    // Hakee valitut palvelutyypit
+    var typeSelect = document.getElementById("filter-container");
+	var selectedType = typeSelect.value;
+	var showAll = selectedType === "Kaikki";
+
+    // Ryhmitelty palvelulista 
+    var serviceListHTML = "<b>Palvelut:</b><br>";
+    var servicesByType = {};
+
+    // Valitaan oikea etäisyyslayer
     var layerToUse;
-    if(currentDistance === "5min") layerToUse = layer_5MIN_UUSI_3;
-    else if(currentDistance === "10min") layerToUse = layer_10MIN_UUSI_2;
-    else if(currentDistance === "15min") layerToUse = layer_15MIN_UUSI_1;
+    if (currentDistance === "5min") layerToUse = layer_5MIN_UUSI_3;
+    else if (currentDistance === "10min") layerToUse = layer_10MIN_UUSI_2;
+    else if (currentDistance === "15min") layerToUse = layer_15MIN_UUSI_1;
 
-    // Lisää vain valitun pysäkin palvelut aktiiviselta layerilta listaan
+    // Käydään läpi valitun pysäkin palvelut
     layerToUse.eachLayer(function(layer) {
-        if(layer.feature.properties.stop_id == stop_id) {
-            serviceListHTML += "<li>" + layer.feature.properties.kohteen_ni +
-                               " (" + layer.feature.properties.palvelukoh + ")</li>";
+        var p = layer.feature.properties;
+        if (p.stop_id == stop_id) {
+            var tyyppi = p.palvelukoh;
+            var nimi = p.kohteen_ni;
+
+            if (showAll || tyyppi === selectedType) {
+                if (!servicesByType[tyyppi]) servicesByType[tyyppi] = [];
+                servicesByType[tyyppi].push(nimi);
+            }
         }
     });
 
-    // Lisää kaikki palvelut myös kartalle kaikilta layerGroupeilta
-    layer_5MIN_UUSI_3.eachLayer(function(layer) {
-        if(layer.feature.properties.stop_id == stop_id) {
-            layerGroup5.addLayer(layer);
-        }
-    });
-    layer_10MIN_UUSI_2.eachLayer(function(layer) {
-        if(layer.feature.properties.stop_id == stop_id) {
-            layerGroup10.addLayer(layer);
-        }
-    });
-    layer_15MIN_UUSI_1.eachLayer(function(layer) {
-        if(layer.feature.properties.stop_id == stop_id) {
-            layerGroup15.addLayer(layer);
-        }
-    });
-	map.removeLayer(layerGroup5);
-	map.removeLayer(layerGroup10);
-	map.removeLayer(layerGroup15);
+    // Rakennetaan HTML-lista
+    for (var tyyppi in servicesByType) {
+        serviceListHTML += "<b>" + tyyppi + "</b><ul>";
+        servicesByType[tyyppi].forEach(function(nimi) {
+            serviceListHTML += "<li>" + nimi + "</li>";
+        });
+        serviceListHTML += "</ul>";
+    }
 
-		// Lisätään vain valitun etäisyyden layerGroup kartalle
-		if (currentDistance === "5min") {
-			map.addLayer(layerGroup5);
-		}
-		else if (currentDistance === "10min") {
-			map.addLayer(layerGroup10);
-		}
-		else if (currentDistance === "15min") {
-			map.addLayer(layerGroup15);
-	}	
-	
-	
-	
-    // Sulje lista ja päivitä HTML
-    serviceListHTML += "</ul>";
+    if (Object.keys(servicesByType).length === 0) {
+        serviceListHTML += "<i>Ei valittuja palveluita tällä alueella.</i>";
+    }
+
     document.getElementById("service-list").innerHTML = serviceListHTML;
-}
 
+    // Päivitetään karttanäyttö
+    map.removeLayer(layerGroup5);
+    map.removeLayer(layerGroup10);
+    map.removeLayer(layerGroup15);
 
-		
-		
+    // Lisätään vain valitut palvelut kartalle
+    layer_5MIN_UUSI_3.eachLayer(function(layer) {
+    var p = layer.feature.properties;
+    if (p.stop_id == stop_id && (showAll || p.palvelukoh === selectedType)) {
+        layerGroup5.addLayer(layer);
+		}
+		});
+
+	layer_10MIN_UUSI_2.eachLayer(function(layer) {
+    var p = layer.feature.properties;
+    if (p.stop_id == stop_id && (showAll || p.palvelukoh === selectedType)) {
+        layerGroup10.addLayer(layer);
+    }
+	});
+
+	layer_15MIN_UUSI_1.eachLayer(function(layer) {
+    var p = layer.feature.properties;
+    if (p.stop_id == stop_id && (showAll || p.palvelukoh === selectedType)) {
+        layerGroup15.addLayer(layer);
+    }
+	});
+
+    // Näytetään vain valittu matka-aika
+    if (currentDistance === "5min") map.addLayer(layerGroup5);
+    else if (currentDistance === "10min") map.addLayer(layerGroup10);
+    else if (currentDistance === "15min") map.addLayer(layerGroup15);
+	}
+	
+	
         var map = L.map('map', {
             zoomControl:false, maxZoom:18, minZoom:5
         }).fitBounds([[60.409475562426806,22.17572543988113],[60.47758379764258,22.368931314547503]]);
@@ -155,7 +185,7 @@
          }
          return tempDiv.innerHTML;
         }
-        // modify popup if contains media
+        
         function addClassToPopupIfMedia(content, popup) {
             var tempDiv = document.createElement('div');
             tempDiv.innerHTML = content;
@@ -426,11 +456,7 @@
         function pop_5MIN_UUSI_3(feature, layer) {
             var popupContent = '<table>\
                     <tr>\
-                        <th scope="row">orig_id</th>\
-                        <td class="visible-with-data" id="orig_id">' + (feature.properties['orig_id'] !== null ? autolinker.link(String(feature.properties['orig_id']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <th scope="row">palvelukoh</th>\
+                        <th scope="row">tyyppi</th>\
                         <td class="visible-with-data" id="palvelukoh">' + (feature.properties['palvelukoh'] !== null ? autolinker.link(String(feature.properties['palvelukoh']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
                     </tr>\
                     <tr>\
@@ -565,21 +591,8 @@
         bounds_group.addLayer(layer_Rautiotie_4);
         map.addLayer(layer_Rautiotie_4);
         function pop_PYSAKKI_5(feature, layer) {
-            var popupContent = '<table>\
-                    <tr>\
-                        <td colspan="2">' + (feature.properties['fid'] !== null ? autolinker.link(String(feature.properties['fid']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                    <tr>\
-                        <th scope="row">stop_id</th>\
-                        <td class="visible-with-data" id="stop_id">' + (feature.properties['stop_id'] !== null ? autolinker.link(String(feature.properties['stop_id']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
-                    </tr>\
-                </table>';
-            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
-			layer.on('popupopen', function(e) {
-				addClassToPopupIfMedia(content, e.popup);
-			});
-			layer.bindPopup(content, { maxHeight: 400 });
-        }
+            layer.bindPopup("Pysäkki: " + feature.properties.stop_id);
+		}
 
         function style_PYSAKKI_5_0() {
             return {
@@ -639,27 +652,48 @@
 		
 		
 		var lastSelectedStopId = null;
+		var selectedStopLayer = null;
 
-		layer_PYSAKKI_5.eachLayer(function(layer){
-		layer.on('click', function(e){
+		layer_PYSAKKI_5.eachLayer(function(layer) {
+    layer.on('click', function(e) {
         var stop_id = layer.feature.properties.stop_id;
+
+        // Palauttaa edellisen valitun pysäkin värin
+        if (selectedStopLayer && selectedStopLayer !== layer) {
+            selectedStopLayer.setStyle({
+                color: 'rgba(35,35,35,1.0)',
+                fillColor: 'rgba(207,8,185,1.0)' // alkuperäinen väri
+            });
+        }
+
+        // Vaihtaa klikatun pysäkin värin punaiseksi
+        layer.setStyle({
+            color: 'rgba(200,0,0,1.0)',
+            fillColor: 'rgba(255,0,0,1.0)'
+        });
+
+        selectedStopLayer = layer; // Päivittää valitun layerin
         lastSelectedStopId = stop_id;
+
+        // Avaa popup ja päivittää palvelulistan
+        layer.openPopup();
         showStopServices(stop_id);
 		});
 		});
-		
+
+// --- Pudotusvalikon muutos päivittää näkyvät palvelut ---
 		document.getElementById("distance-select").addEventListener("change", function(e) {
-    currentDistance = e.target.value;
-    if (lastSelectedStopId !== null) {
+		currentDistance = e.target.value;
+		if (lastSelectedStopId !== null) {
         showStopServices(lastSelectedStopId);
 		}
 		});
 		
-		
-		
-	
-	
-
+		document.getElementById("filter-container").addEventListener("change", function() {
+    if (lastSelectedStopId !== null) {
+        showStopServices(lastSelectedStopId);
+    }
+});;
 		
         </script>        
     </body>
