@@ -1,11 +1,17 @@
 # The Turku tramway: Accessibility of services​
-## tourism, restaurants and cultural services 
+**This webmap was created as MAAN7771 course work in 2025 by:**
+
+**Kari Hillgén, Siiri Kankare, Wilma Peippo and Veera Tuomola.**
+
+The map depicts accessibility of different cultural services alaong the planned tramline in Turku. The solution responded to challenge provided by Lounaistieto.
+
+Explore the map: [https://utu-geospatial-labs.github.io/2025-webmap-geobuddies/](https://utu-geospatial-labs.github.io/2025-webmap-geobuddies/)
+
+
+## Additional information
   
-The inteactive web map is about the planned Turku tramway and the map is focusing on tourism, restaurants and cultural services in Turku. The map helps to understand how the tramway affects the accessibility of services and supports sustainable mobility and urban planning. The map is for citizens needs and it helps to search different services near the tramstops. From each tramstop you can choose 5-, 10- or 15-minute walking distance and see how many and what types of services are included in each area. When user clicks any tramstop there will pop-up a list about the services that are within the selected walking distance.
+The inteactive web map is about the planned Turku tramway and the map is focusing on **tourism, restaurants and cultural services** in Turku. The map helps to understand how the tramway affects the accessibility of services and supports sustainable mobility and urban planning. The map is for citizens needs and it helps to search different services near the tramstops. From each tramstop you can choose 5-, 10- or 15-minute walking distance and see how many and what types of services are included in each area. When user clicks any tramstop there will pop-up a list about the services that are within the selected walking distance.
 
-Web site:
-
-The map is available at: https://wilma-p.github.io/tram_web/#13/60.4466/22.3050
 
 Datasets:
 
